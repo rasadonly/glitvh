@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: my-python-app
+    env: python
+    buildCommand: |
+      apt-get update && \
+      apt-get install -y libxml2-dev libxslt1-dev python3-dev gcc && \
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app
