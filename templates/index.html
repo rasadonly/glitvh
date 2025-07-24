@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LightNovel EPUB Downloader</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        input[type=text] { width: 70%; padding: 10px; }
+        button { padding: 10px 15px; margin: 10px 0; }
+        ul { padding-left: 0; }
+        li { list-style: none; margin: 5px 0; }
+        pre { background: #222; color: #0f0; padding: 10px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>📚 LightNovel EPUB Downloader</h1>
+
+    {% if message %}
+        <p style="color: red;">{{ message }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <label for="novel_url">Enter novel URL:</label><br>
+        <input type="text" id="novel_url" name="novel_url" placeholder="https://example.com/novel/..." required>
+        <br>
+        <button type="submit">⬇️ Start Download</button>
+    </form>
+
+    <hr>
+
+    <button onclick="loadEpubs()">🔍 Start Searching EPUB</button>
+    <h2>⬇️ Available EPUB Files:</h2>
+    <ul id="epub-list">
+        {% for f in epub_files %}
+        <li><a href="{{ url_for('serve_epub', user_id=session['user_id'], filename=f) }}">{{ f }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <h2>📈 Download Progress:</h2>
+    <pre id="progress-log">Waiting for updates...</pre>
+
+    <script>
+        function loadEpubs() {
+            fetch('/list-epubs')
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById('epub-list');
+                    list.innerHTML = '';
+                    if (data.files.length === 0) {
+                        list.innerHTML = '<li>No EPUBs found.</li>';
+                    } else {
+                        data.files.forEach(file => {
+                            const parts = file.split('/');
+                            const user_id = parts[0];
+                            const filename = parts.slice(2).join('/');
+                            const a = document.createElement('a');
+                            a.href = `/downloads/${user_id}/epub/${filename}`;
+                            a.textContent = filename;
+                            const li = document.createElement('li');
+                            li.appendChild(a);
+                            list.appendChild(li);
+                        });
+                    }
+                });
+        }
+
+        setInterval(() => {
+            fetch('/progress')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('progress-log').textContent = data.log || 'Waiting for logs...';
+                });
+        }, 3000);
+    </script>
+</body>
+</html>
